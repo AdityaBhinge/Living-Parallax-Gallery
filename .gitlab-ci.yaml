@@ -1,44 +1,25 @@
 stages:
   - build
-  - pages
+  - deploy
 
 variables:
   DOCKER_TLS_CERTDIR: ""
 
-build_image:
+build_job:
   image: docker:24
   services:
-    - name: docker:24-dind
-      alias: dind
+    - docker:24-dind
   stage: build
-  variables:
-    DOCKER_DRIVER: overlay2
-  before_script:
-    - docker info
-    - echo "Logging in to registry $CI_REGISTRY"
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_JOB_TOKEN" $CI_REGISTRY
   script:
-    - docker build -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA" .
-    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
-  only:
-    - dev
-  tags: []
-  retry: 2
-  when: on_success
-  allow_failure: false
-  # DinD requires privileged runners. If using shared runners set 'privileged: true' on your runner.
-  privileged: true
-
-pages:
-  stage: pages
-  image: alpine:latest
-  script:
-    - mkdir -p public
-    - cp index.html tooplate-living-parallax.css tooplate-living-scripts.js public/ || true
-    - cp -r images public/ || true
+    - docker build -t living-parallax .
+    - docker save living-parallax -o my-app-image.tar
   artifacts:
     paths:
-      - public
+      - my-app-image.tar
     expire_in: 1h
-  only:
-    - dev
+
+deploy_job:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - echo "Add deploy steps here (push image to registry or deploy to server)"
